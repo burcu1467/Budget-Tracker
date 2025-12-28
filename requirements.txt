@@ -1,0 +1,11 @@
+fastapi
+uvicorn[standard]
+python-dotenv
+python-multipart
+python-jose[cryptography]
+passlib[bcrypt]
+Pillow
+pytesseract
+reportlab
+openpyxl
+requests

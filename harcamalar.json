@@ -1,0 +1,38 @@
+[
+  {
+    "aciklama": "BİM",
+    "tutar": 565.0,
+    "kategori": "Alışveriş",
+    "tarih": "20.12.2025"
+  },
+  {
+    "aciklama": "A101",
+    "tutar": 749.0,
+    "kategori": "Alışveriş",
+    "tarih": "21.12.2025"
+  },
+  {
+    "aciklama": "OBilet",
+    "tutar": 750.0,
+    "kategori": "Ulaşım",
+    "tarih": "20.12.2025"
+  },
+  {
+    "aciklama": "Gratis",
+    "tutar": 450.0,
+    "kategori": "Alışveriş",
+    "tarih": "22.12.2025"
+  },
+  {
+    "aciklama": "Elektrik",
+    "tutar": 210.0,
+    "kategori": "Faturalar",
+    "tarih": "23.12.2025"
+  },
+  {
+    "aciklama": "Sörf",
+    "tutar": 550.0,
+    "kategori": "Eğlence",
+    "tarih": "27.12.2025"
+  }
+]

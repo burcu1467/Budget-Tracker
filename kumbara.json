@@ -1,0 +1,17 @@
+{
+  "bakiye": 100.0,
+  "islemler": [
+    {
+      "tarih": "21.12.2025",
+      "tutar": 100.0,
+      "tür": "ekleme",
+      "açıklama": "Otomatik tasarruf"
+    }
+  ],
+  "ayar": {
+    "gunluk_tutar": 100.0,
+    "haftalik_tutar": 0,
+    "mod": "gunluk",
+    "son_tarih": "21.12.2025"
+  }
+}

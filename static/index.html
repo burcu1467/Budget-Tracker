@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bütçe Takipçisi</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --bg: #f9fafb;
+            --card-bg: #ffffff;
+            --text: #111827;
+            --text-secondary: #6b7280;
+            --danger: #ef4444;
+            --success: #10b981;
+            --border: #e5e7eb;
+            --radius: 0.5rem;
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        body { font-family: 'Inter', system-ui, -apple-system, sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding: 0; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 2rem; }
+        .card { background: var(--card-bg); padding: 1.5rem; border-radius: var(--radius); box-shadow: var(--shadow-sm); margin-bottom: 1.5rem; border: 1px solid var(--border); }
+        h1, h2, h3 { margin-top: 0; color: #111827; font-weight: 600; }
+        h2 { font-size: 1.5rem; margin-bottom: 1rem; }
+        h3 { font-size: 1.125rem; margin-bottom: 1rem; }
+        input, select, button { width: 100%; padding: 0.75rem 1rem; margin-bottom: 1rem; border: 1px solid var(--border); border-radius: var(--radius); box-sizing: border-box; font-size: 0.95rem; transition: all 0.2s; }
+        input:focus, select:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1); }
+        button { background-color: var(--primary); color: white; border: none; cursor: pointer; font-weight: 500; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
+        button:hover { background-color: var(--primary-hover); transform: translateY(-2px); box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.3); }
+        button:active { transform: translateY(0); box-shadow: none; }
+        button.secondary { background-color: #f3f4f6; color: #374151; border: 1px solid var(--border); }
+        button.secondary:hover { background-color: #e5e7eb; }
+        button.danger { background-color: #fee2e2; color: #991b1b; width: auto; padding: 0.4rem 0.8rem; font-size: 0.85rem; }
+        button.danger:hover { background-color: #fecaca; }
+        .hidden { display: none !important; }
+        .flex { display: flex; gap: 1rem; }
+        .summary-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; text-align: center; }
+        .summary-item { padding: 1.5rem; background: white; border-radius: var(--radius); border: 1px solid var(--border); box-shadow: var(--shadow-sm); }
+        .summary-item small { display: block; color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
+        .summary-item div { font-size: 1.5rem !important; font-weight: 700 !important; }
+        .summary-item.income div { color: var(--success); }
+        .summary-item.expense div { color: var(--danger); }
+        .list-item { display: flex; justify-content: space-between; align-items: center; padding: 1rem; border-bottom: 1px solid var(--border); transition: background-color 0.2s; }
+        .list-item:last-child { border-bottom: none; }
+        .list-item:hover { background-color: #f9fafb; }
+        .edit-btn { display: none; margin-right: 0.5rem; padding: 0.25rem 0.75rem; font-size: 0.75rem; width: auto; margin-bottom: 0; }
+        .list-item:hover .edit-btn { display: inline-block; }
+        .amount { font-weight: 600; font-family: 'Courier New', monospace; }
+        .amount.plus { color: var(--success); }
+        .amount.minus { color: var(--danger); }
+        .tabs { display: flex; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border); gap: 1rem; }
+        .tab { padding: 0.75rem 0; cursor: pointer; color: var(--text-secondary); font-weight: 500; position: relative; }
+        .tab:hover { color: var(--text); }
+        .tab.active { color: var(--primary); border-bottom: 2px solid var(--primary); margin-bottom: -1px; }
+        #loading { position: fixed; top: 0; left: 0; width: 100%; height: 3px; background: var(--primary); animation: loading 1s infinite; display: none; z-index: 9999; }
+        @keyframes loading { 0% { width: 0; } 50% { width: 50%; } 100% { width: 100%; } }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        /* Animasyonlar */
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        #dashboard-view, #recurring-view, #piggybank-view, #profile-view { animation: fadeIn 0.4s ease-out; }
+        .list-item { animation: fadeIn 0.3s ease-out forwards; }
+        .card { transition: transform 0.2s, box-shadow 0.2s; }
+        .card:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
+
+        /* Toast Notification */
+        #toast {
+            visibility: hidden;
+            min-width: 250px;
+            background-color: var(--success);
+            color: #fff;
+            text-align: center;
+            border-radius: 8px;
+            padding: 16px;
+            position: fixed;
+            z-index: 3000;
+            right: 30px;
+            top: 30px;
+            font-size: 16px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            opacity: 0;
+            transition: opacity 0.3s, top 0.3s;
+        }
+        #toast.show {
+            visibility: visible;
+            opacity: 1;
+            top: 50px;
+        }
+
+        /* Sidebar Layout */
+        .dashboard-wrapper { display: flex; gap: 2rem; align-items: flex-start; }
+        .sidebar { width: 260px; flex-shrink: 0; background: var(--card-bg); padding: 1.5rem; border-radius: var(--radius); box-shadow: var(--shadow-sm); border: 1px solid var(--border); position: sticky; top: 2rem; }
+        .main-content { flex-grow: 1; width: 100%; min-width: 0; }
+        .menu-item { padding: 0.75rem 1rem; margin-bottom: 0.5rem; cursor: pointer; border-radius: var(--radius); transition: all 0.2s; font-weight: 500; color: var(--text-secondary); display: flex; justify-content: space-between; align-items: center; }
+        .menu-item:hover { background-color: #f3f4f6; color: var(--text); }
+        .menu-item.active { background-color: #eef2ff; color: var(--primary); }
+        
+        /* Responsive (Mobil Uyumlu) Tasarım */
+        @media (max-width: 768px) {
+            .container { padding: 1rem; }
+            .dashboard-wrapper { flex-direction: column; gap: 1.5rem; }
+            .sidebar { width: 100%; position: static; box-sizing: border-box; }
+            .summary-grid { grid-template-columns: 1fr; gap: 1rem; }
+            .flex { flex-wrap: wrap; }
+            .list-item { flex-direction: column; align-items: flex-start; gap: 0.5rem; }
+            .list-item > div { width: 100%; }
+            .list-item > div:last-child { text-align: left !important; display: flex; align-items: center; justify-content: space-between; margin-top: 0.25rem; }
+            .edit-btn { display: inline-block; padding: 0.4rem 0.8rem; } /* Mobilde her zaman göster */
+            .tabs { overflow-x: auto; white-space: nowrap; -webkit-overflow-scrolling: touch; padding-bottom: 5px; }
+            #auth-section .card { margin: 2rem auto !important; }
+        }
+
+        /* Modal Styles */
+        .modal { position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; backdrop-filter: blur(2px); }
+        .modal-content { background-color: #fefefe; padding: 2rem; border: none; width: 90%; max-width: 450px; border-radius: 1rem; box-shadow: var(--shadow); position: relative; }
+        .close { color: #9ca3af; float: right; font-size: 24px; font-weight: bold; cursor: pointer; position: absolute; top: 1rem; right: 1rem; transition: color 0.2s; }
+        .close:hover, .close:focus { color: var(--text); text-decoration: none; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div id="loading"></div>
+
+    <!-- AUTH SECTION -->
+    <div id="auth-section" class="container">
+        <div class="card" style="max-width: 400px; margin: 50px auto;">
+            <h2 id="auth-title">Giriş Yap</h2>
+            <form id="auth-form">
+                <input type="text" id="username" placeholder="Kullanıcı Adı" required>
+                <input type="password" id="password" placeholder="Şifre" required>
+                <input type="text" id="recovery-key" placeholder="Kurtarma Anahtarı (Sadece Kayıt İçin)" class="hidden">
+                <button type="submit" id="submit-btn">Giriş Yap</button>
+            </form>
+            <p style="text-align: center; margin-top: 10px;">
+                <a href="#" id="toggle-auth">Hesabın yok mu? Kayıt Ol</a>
+            </p>
+        </div>
+    </div>
+
+    <!-- DASHBOARD SECTION -->
+    <div id="dashboard-section" class="container hidden">
+        <div class="flex" style="justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h2>Hoşgeldin, <span id="user-display"></span></h2>
+            <button onclick="logout()" class="secondary" style="width: auto;">Çıkış</button>
+        </div>
+
+        <div class="dashboard-wrapper">
+            <!-- Sidebar -->
+            <div class="sidebar">
+                <h3 style="margin-bottom: 15px; padding-left: 5px; font-size: 1.1em; color: #444;">📂 Kategoriler</h3>
+                <div id="sidebar-menu">
+                    <!-- JS ile dolacak -->
+                </div>
+                <button onclick="openCategoryModal()" class="secondary" style="margin-top: 15px; width: 100%; font-size: 0.9em;">+ Kategori Ekle</button>
+            </div>
+
+            <!-- Main Content -->
+            <div class="main-content">
+                <!-- DASHBOARD GÖRÜNÜMÜ -->
+                <div id="dashboard-view">
+                <div class="card">
+                    <h3>Bu Ayın Özeti</h3>
+                    <div class="summary-grid">
+                        <div class="summary-item income">
+                            <small>Gelir</small>
+                            <div id="total-income" style="font-size: 1.2em; font-weight: bold;">0 ₺</div>
+                        </div>
+                        <div class="summary-item expense">
+                            <small>Gider</small>
+                            <div id="total-expense" style="font-size: 1.2em; font-weight: bold;">0 ₺</div>
+                        </div>
+                        <div class="summary-item">
+                            <small>Kalan</small>
+                            <div id="net-balance" style="font-size: 1.2em; font-weight: bold;">0 ₺</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Grafik Kartı -->
+                <div class="card">
+                    <h3>Harcama Dağılımı</h3>
+                    <div style="position: relative; height:300px; width:100%; display:flex; justify-content:center;"><canvas id="expenseChart"></canvas></div>
+                </div>
+
+                <!-- Ekleme Formu -->
+                <div class="card">
+                    <div class="tabs">
+                        <div class="tab active" onclick="switchTab('expense')">Harcama Ekle</div>
+                        <div class="tab" onclick="switchTab('income')">Gelir Ekle</div>
+                    </div>
+
+                    <!-- OCR Butonu -->
+                    <button type="button" onclick="document.getElementById('ocr-input').click()" style="background-color: #8b5cf6; margin-bottom: 15px;">📸 Fiş Tara ve Otomatik Ekle</button>
+                    <input type="file" id="ocr-input" accept="image/*" class="hidden" onchange="handleOcrUpload(this)">
+
+                    <form id="transaction-form">
+                        <input type="date" id="t-date" style="color: #555;">
+                        <input type="text" id="t-desc" placeholder="Açıklama (Örn: Market)" required>
+                        <input type="number" id="t-amount" placeholder="Tutar (TL)" step="0.01" required>
+                        
+                        <!-- Sadece Harcama İçin -->
+                        <div id="expense-fields">
+                            <select id="t-category">
+                                <option value="Diğer">Kategori Seçiniz</option>
+                                <!-- Kategoriler JS ile dolacak -->
+                            </select>
+                            <input type="file" id="t-file" accept="image/*">
+                        </div>
+
+                        <button type="submit">Ekle</button>
+                    </form>
+                </div>
+
+                <!-- Listeler -->
+                <div class="card">
+                    <h3>Son İşlemler</h3>
+                    <div id="transaction-list">
+                        <!-- JS ile doldurulacak -->
+                        <p style="text-align: center; color: #888;">Yükleniyor...</p>
+                    </div>
+                </div>
+                </div> <!-- End Dashboard View -->
+
+                <!-- TEKRARLAYAN İŞLEMLER GÖRÜNÜMÜ -->
+                <div id="recurring-view" class="hidden">
+                    <div class="card">
+                        <h3>🔄 Tekrarlayan İşlemler</h3>
+                        <p style="color: #666; font-size: 0.9em; margin-bottom: 20px;">Her ayın belirli gününde otomatik olarak eklenecek harcamalarınızı buradan yönetebilirsiniz.</p>
+                        
+                        <form id="recurring-form" style="background: #f9fafb; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                            <h4>Yeni Ekle</h4>
+                            <div class="flex" style="flex-wrap: wrap;">
+                                <input type="text" id="rec-desc" placeholder="Açıklama (Örn: Netflix)" required style="flex: 2;">
+                                <input type="number" id="rec-amount" placeholder="Tutar" required style="flex: 1;">
+                                <input type="number" id="rec-day" placeholder="Gün (1-31)" min="1" max="31" required style="flex: 1;">
+                            </div>
+                            <select id="rec-category">
+                                <!-- JS ile dolacak -->
+                            </select>
+                            <button type="submit">Kaydet</button>
+                        </form>
+
+                        <div id="recurring-list">
+                            <!-- JS ile dolacak -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- KUMBARA GÖRÜNÜMÜ -->
+                <div id="piggybank-view" class="hidden">
+                    <div class="card" style="text-align: center; background: linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%);">
+                        <h2 style="margin-bottom: 10px;">🐖 Kumbara Bakiyesi</h2>
+                        <div id="piggy-balance" style="font-size: 3em; font-weight: bold; color: var(--primary); margin: 20px 0;">0 ₺</div>
+                        
+                        <!-- Hedef Göstergesi -->
+                        <div id="piggy-goal-container" class="hidden" style="margin-bottom: 20px; padding: 10px; background: rgba(255,255,255,0.5); border-radius: 8px;">
+                            <div style="display:flex; justify-content:space-between; margin-bottom:5px; font-weight:500;">
+                                <span id="piggy-goal-text">Hedef: Tatil</span>
+                                <span id="piggy-goal-status">0 / 5000 ₺ (%0)</span>
+                            </div>
+                            <div style="width:100%; background:#ddd; height:10px; border-radius:5px; overflow:hidden;">
+                                <div id="piggy-goal-bar" style="width:0%; height:100%; background:var(--success); transition:width 0.5s;"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="flex" style="justify-content: center; gap: 10px; margin-bottom: 20px;">
+                            <button onclick="piggyAction('ekle')" class="success" style="width: auto; background-color: var(--success);">+ Para Ekle</button>
+                            <button onclick="piggyAction('cek')" class="danger" style="width: auto;">- Para Çek</button>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h3>⚙️ Otomatik Tasarruf Ayarları</h3>
+                        <form id="piggy-settings-form">
+                            <select id="piggy-mode">
+                                <option value="">Otomatik Tasarruf Kapalı</option>
+                                <option value="gunluk">Günlük Tasarruf</option>
+                                <option value="haftalik">Haftalık Tasarruf</option>
+                            </select>
+                            <input type="number" id="piggy-amount" placeholder="Tutar (TL)" step="0.01">
+                            
+                            <h4 style="margin-top:15px; margin-bottom:10px;">🎯 Hedef Belirle (İsteğe Bağlı)</h4>
+                            <input type="text" id="piggy-goal-desc" placeholder="Hedef Açıklaması (Örn: Tatil)">
+                            <input type="number" id="piggy-goal-amount" placeholder="Hedef Tutar (TL)" step="0.01">
+                            
+                            <button type="submit" class="secondary">Ayarları Kaydet</button>
+                        </form>
+                    </div>
+
+                    <div class="card">
+                        <h3>📝 Son İşlemler</h3>
+                        <div id="piggy-history"></div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Kategori Ekleme Modalı -->
+    <div id="category-modal" class="modal hidden" style="display: none;">
+        <div class="modal-content">
+            <span class="close" onclick="closeCategoryModal()">&times;</span>
+            <h3 style="margin-top: 0;">Yeni Kategori Ekle</h3>
+            <form id="add-category-form">
+                <input type="text" id="new-category-name" placeholder="Kategori Adı" required>
+                <button type="submit">Ekle</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- OCR Yükleniyor Ekranı -->
+    <div id="ocr-loading" class="hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 2000; display: none; justify-content: center; align-items: center; flex-direction: column; color: white;">
+        <div style="border: 5px solid #f3f3f3; border-top: 5px solid var(--primary); border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite;"></div>
+        <p style="margin-top: 15px; font-weight: bold; font-size: 1.1em;">Fiş Taranıyor...</p>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast">İşlem Başarılı!</div>
+
+    <script src="/app.js?v=7"></script>
+</body>
+</html>

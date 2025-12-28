@@ -1,0 +1,10 @@
+services:
+  api:
+    build: .
+    container_name: butce-takipcisi
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+    environment:
+      - ALLOWED_ORIGINS=["*"]

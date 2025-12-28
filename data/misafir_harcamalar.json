@@ -1,0 +1,38 @@
+[
+  {
+    "aciklama": "Market",
+    "tutar": 150.0,
+    "kategori": "Alışveriş",
+    "tarih": "21.12.2025"
+  },
+  {
+    "aciklama": "Restoran 1",
+    "tutar": 240.0,
+    "kategori": "Yemek",
+    "tarih": "21.12.2025"
+  },
+  {
+    "aciklama": "Ulasim 1",
+    "tutar": 710.0,
+    "kategori": "Ulaşım",
+    "tarih": "21.12.2025"
+  },
+  {
+    "aciklama": "Market",
+    "tutar": 347.0,
+    "kategori": "Alışveriş",
+    "tarih": "21.12.2025"
+  },
+  {
+    "aciklama": "Eczane 1",
+    "tutar": 325.0,
+    "kategori": "Sağlık",
+    "tarih": "21.12.2025"
+  },
+  {
+    "aciklama": "Market 2",
+    "tutar": 212.0,
+    "kategori": "Alışveriş",
+    "tarih": "21.12.2025"
+  }
+]

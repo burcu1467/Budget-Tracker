@@ -1,0 +1,9 @@
+[
+  {
+    "aciklama": "Elektrik",
+    "tutar": 250.0,
+    "kategori": "Faturalar",
+    "gun": 12,
+    "aktif": true
+  }
+]
