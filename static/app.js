@@ -15,6 +15,9 @@ window.updateProfile = updateProfile;
 window.changePassword = changePassword;
 window.resendVerification = resendVerification;
 window.changeLanguage = changeLanguage;
+window.toggleSidebar = toggleSidebar;
+window.toggleRightSidebar = toggleRightSidebar;
+window.closeAllSidebars = closeAllSidebars;
 
 const UI_TEXT = {
     tr: {
@@ -31,6 +34,40 @@ const UI_TEXT = {
     }
 };
 function txt(key) { return UI_TEXT[currentLang]?.[key] || key; }
+
+function toggleSidebar() {
+    const sidebar = document.querySelector('.sidebar');
+    const overlay = document.getElementById('sidebar-overlay');
+    
+    // Sağ menü açıksa kapat
+    document.querySelector('.right-sidebar')?.classList.remove('active');
+
+    if (sidebar) {
+        sidebar.classList.toggle('active');
+        if (sidebar.classList.contains('active')) overlay.classList.add('active');
+        else overlay.classList.remove('active');
+    }
+}
+
+function toggleRightSidebar() {
+    const sidebar = document.querySelector('.right-sidebar');
+    const overlay = document.getElementById('sidebar-overlay');
+    
+    // Sol menü açıksa kapat
+    document.querySelector('.sidebar')?.classList.remove('active');
+
+    if (sidebar) {
+        sidebar.classList.toggle('active');
+        if (sidebar.classList.contains('active')) overlay.classList.add('active');
+        else overlay.classList.remove('active');
+    }
+}
+
+function closeAllSidebars() {
+    document.querySelector('.sidebar')?.classList.remove('active');
+    document.querySelector('.right-sidebar')?.classList.remove('active');
+    document.getElementById('sidebar-overlay')?.classList.remove('active');
+}
 
 // --- Başlangıç ---
 document.addEventListener("DOMContentLoaded", () => {
@@ -585,6 +622,7 @@ function renderSidebar(categories) {
             document.querySelectorAll("#sidebar-menu .menu-item").forEach(el => el.classList.remove("active"));
             div.classList.add("active");
             item.action();
+            if (window.innerWidth <= 1024) toggleSidebar(); // Mobilde tıklandığında menüyü kapat
         };
         menu.appendChild(div);
     });
@@ -620,6 +658,7 @@ function renderSidebar(categories) {
             document.getElementById('dashboard-view').classList.remove('hidden');
             
             handleSidebarClick(cat, item);
+            if (window.innerWidth <= 1024) toggleSidebar(); // Mobilde tıklandığında menüyü kapat
         };
         menu.appendChild(item);
     });

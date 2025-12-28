@@ -67,6 +67,7 @@ def init_db():
     c.execute('''CREATE TABLE IF NOT EXISTS kumbara_islemleri (id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT, tarih TEXT, tutar REAL, tur TEXT, aciklama TEXT)''')
     c.execute('''CREATE TABLE IF NOT EXISTS kategori_butce (id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT, kategori TEXT, limit_tutar REAL)''')
     c.execute('''CREATE TABLE IF NOT EXISTS custom_categories (id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT, name TEXT)''')
+    c.execute('''CREATE TABLE IF NOT EXISTS user_badges (username TEXT, badge_code TEXT, earned_at TEXT, PRIMARY KEY (username, badge_code))''')
     conn.commit()
     conn.close()
 

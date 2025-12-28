@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bütçe Takipçisi</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
         :root {
             --primary: #4f46e5;
@@ -98,11 +99,58 @@
         .menu-item:hover { background-color: #f3f4f6; color: var(--text); }
         .menu-item.active { background-color: #eef2ff; color: var(--primary); }
         
+        /* Right Sidebar */
+        .right-sidebar { width: 260px; flex-shrink: 0; background: var(--card-bg); padding: 1.5rem; border-radius: var(--radius); box-shadow: var(--shadow-sm); border: 1px solid var(--border); position: sticky; top: 2rem; }
+        .badge-item { display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 8px; margin-bottom: 12px; border: 1px solid transparent; transition: all 0.2s; background: #fff; }
+        .badge-item.locked { opacity: 0.6; filter: grayscale(100%); background: #f9fafb; border-color: #e5e7eb; }
+        .badge-item.unlocked { border-color: #bbf7d0; background: #f0fdf4; }
+        .badge-item.unlocked.savings { border-color: #fed7aa; background: #fff7ed; }
+        .badge-item.unlocked.expense { border-color: #bfdbfe; background: #eff6ff; }
+        .badge-item.unlocked.night { border-color: #c4b5fd; background: #f5f3ff; }
+        .badge-icon { font-size: 1.8em; }
+        .badge-info { flex: 1; }
+        .badge-info h4 { margin: 0; font-size: 0.9em; font-weight: 600; color: var(--text); }
+        .badge-info p { margin: 2px 0 0 0; font-size: 0.75em; color: var(--text-secondary); line-height: 1.2; }
+        
         /* Responsive (Mobil Uyumlu) Tasarım */
+        .mobile-menu-btn { display: none; }
+        .mobile-badge-btn { display: none; }
+        .sidebar-overlay { display: none; }
+        .sidebar-close-btn { display: none; }
+
+        @media (max-width: 1024px) {
+            .dashboard-wrapper { flex-direction: column; gap: 1.5rem; }
+            
+            /* Sidebar Mobile Styles */
+            .mobile-menu-btn { display: inline-block; margin-right: 10px; padding: 0.4rem 0.8rem; width: auto; margin-bottom: 0; font-size: 1.2rem; line-height: 1; }
+            .mobile-badge-btn { display: inline-block; margin-right: 10px; padding: 0.4rem 0.8rem; width: auto; margin-bottom: 0; font-size: 1.2rem; line-height: 1; }
+            
+            .sidebar { 
+                position: fixed; top: 0; left: -300px; height: 100vh; width: 280px; 
+                z-index: 2000; transition: left 0.3s ease; margin: 0; overflow-y: auto;
+            }
+            .sidebar.active { left: 0; }
+            .sidebar-overlay {
+                position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+                background: rgba(0,0,0,0.5); z-index: 1999; display: none;
+            }
+            .sidebar-overlay.active { display: block; }
+            
+            .right-sidebar { 
+                position: fixed; top: 0; right: -300px; height: 100vh; width: 280px; 
+                z-index: 2000; transition: right 0.3s ease; margin: 0; overflow-y: auto;
+                background: var(--card-bg);
+            }
+            .right-sidebar.active { right: 0; }
+            
+            .sidebar-close-btn {
+                display: block; position: absolute; top: 10px; right: 10px; width: auto;
+                background: none; border: none; font-size: 2rem; line-height: 1;
+                cursor: pointer; color: #888; padding: 5px; margin: 0;
+            }
+        }
         @media (max-width: 768px) {
             .container { padding: 1rem; }
-            .dashboard-wrapper { flex-direction: column; gap: 1.5rem; }
-            .sidebar { width: 100%; position: static; box-sizing: border-box; }
             .summary-grid { grid-template-columns: 1fr; gap: 1rem; }
             .flex { flex-wrap: wrap; }
             .list-item { flex-direction: column; align-items: flex-start; gap: 0.5rem; }
@@ -142,13 +190,22 @@
     <!-- DASHBOARD SECTION -->
     <div id="dashboard-section" class="container hidden">
         <div class="flex" style="justify-content: space-between; align-items: center; margin-bottom: 20px;">
-            <h2>Hoşgeldin, <span id="user-display"></span></h2>
-            <button onclick="logout()" class="secondary" style="width: auto;">Çıkış</button>
+            <div style="display: flex; align-items: center;">
+                <button class="secondary mobile-menu-btn" onclick="toggleSidebar()">☰</button>
+                <h2 style="margin:0;">Hoşgeldin, <span id="user-display"></span></h2>
+            </div>
+            <div style="display: flex; align-items: center;">
+                <button class="secondary mobile-badge-btn" onclick="toggleRightSidebar()">🏆</button>
+                <button onclick="logout()" class="secondary" style="width: auto;">Çıkış</button>
+            </div>
         </div>
+
+        <div id="sidebar-overlay" class="sidebar-overlay" onclick="closeAllSidebars()"></div>
 
         <div class="dashboard-wrapper">
             <!-- Sidebar -->
             <div class="sidebar">
+                <button class="sidebar-close-btn" onclick="toggleSidebar()">&times;</button>
                 <h3 style="margin-bottom: 15px; padding-left: 5px; font-size: 1.1em; color: #444;">📂 Kategoriler</h3>
                 <div id="sidebar-menu">
                     <!-- JS ile dolacak -->
@@ -160,6 +217,7 @@
             <div class="main-content">
                 <!-- DASHBOARD GÖRÜNÜMÜ -->
                 <div id="dashboard-view">
+                
                 <div class="card">
                     <h3>Bu Ayın Özeti</h3>
                     <div class="summary-grid">
@@ -288,6 +346,12 @@
                             <button type="submit" class="secondary">Ayarları Kaydet</button>
                         </form>
                     </div>
+                    
+                    <!-- Rozet Alanı -->
+                    <div id="badges-container" class="card hidden">
+                        <h3 style="display:flex; align-items:center; gap:10px;">🏅 Rozetlerim <small style="font-weight:normal; font-size:0.7em; color:#666;">Başarıların burada görünür</small></h3>
+                        <div id="badge-list" class="flex" style="flex-wrap:wrap; gap:15px;"></div>
+                    </div>
 
                     <div class="card">
                         <h3>📝 Son İşlemler</h3>
@@ -295,6 +359,13 @@
                     </div>
                 </div>
 
+            </div>
+
+            <!-- Right Sidebar -->
+            <div class="right-sidebar">
+                <button class="sidebar-close-btn" onclick="toggleRightSidebar()">&times;</button>
+                <h3 style="margin-bottom: 15px; font-size: 1.1em; color: #444;">🏆 Rozet Durumu</h3>
+                <div id="right-sidebar-badges"></div>
             </div>
         </div>
     </div>
@@ -320,6 +391,172 @@
     <!-- Toast Notification -->
     <div id="toast">İşlem Başarılı!</div>
 
-    <script src="/app.js?v=7"></script>
+    <script src="/app.js?v=8"></script>
+    <script>
+        // Konfeti Efekti Entegrasyonu
+        (function() {
+            function fireConfetti() {
+                confetti({
+                    particleCount: 150,
+                    spread: 70,
+                    origin: { y: 0.6 },
+                    colors: ['#10b981', '#3b82f6', '#f59e0b', '#ef4444']
+                });
+            }
+
+            function showSuccessUI() {
+                setTimeout(() => {
+                    const container = document.getElementById('piggy-goal-container');
+                    if (container) {
+                        container.innerHTML = `
+                            <div style="text-align: center; padding: 15px; background: rgba(16, 185, 129, 0.1); border-radius: 8px; border: 1px solid var(--success); animation: fadeIn 0.5s;">
+                                <h3 style="color: var(--success); margin: 0 0 5px 0;">🏆 Hedef Tamamlandı!</h3>
+                                <p style="margin: 0; font-size: 0.9em; color: #065f46;">Harika! Birikim hedefine ulaştın.</p>
+                                <button onclick="document.getElementById('piggy-goal-amount').focus();" class="secondary" style="margin-top: 10px; font-size: 0.9em; width: auto;">+ Yeni Hedef Ekle</button>
+                            </div>
+                        `;
+                        container.classList.remove('hidden');
+                    }
+                    
+                    // Inputları temizle ki yeni hedef girilebilsin
+                    const descInput = document.getElementById('piggy-goal-desc');
+                    const amountInput = document.getElementById('piggy-goal-amount');
+                    if(descInput) descInput.value = "";
+                    if(amountInput) amountInput.value = "";
+                }, 150);
+            }
+
+            function restoreGoalUI() {
+                const container = document.getElementById('piggy-goal-container');
+                if (container) {
+                    container.innerHTML = `
+                        <div style="display:flex; justify-content:space-between; margin-bottom:5px; font-weight:500;">
+                            <span id="piggy-goal-text">Hedef: ...</span>
+                            <span id="piggy-goal-status">0 / 0 ₺ (%0)</span>
+                        </div>
+                        <div style="width:100%; background:#ddd; height:10px; border-radius:5px; overflow:hidden;">
+                            <div id="piggy-goal-bar" style="width:0%; height:100%; background:var(--success); transition:width 0.5s;"></div>
+                        </div>
+                    `;
+                }
+            }
+
+            function updateBadges(badges) {
+                const container = document.getElementById('badges-container');
+                const list = document.getElementById('badge-list');
+                
+                if (!badges || badges.length === 0) {
+                    container.classList.add('hidden');
+                    return;
+                }
+
+                container.classList.remove('hidden');
+                list.innerHTML = '';
+
+                if (badges.includes('GOAL_MASTER')) {
+                    list.innerHTML += `
+                        <div style="text-align:center; padding:10px; background:#f0fdf4; border:1px solid #bbf7d0; border-radius:8px; width:100px;">
+                            <div style="font-size:2em;">🎯</div>
+                            <div style="font-size:0.8em; font-weight:bold; color:#166534; margin-top:5px;">Hedef Avcısı</div>
+                        </div>
+                    `;
+                }
+
+                if (badges.includes('FIRST_EXPENSE')) {
+                    list.innerHTML += `
+                        <div style="text-align:center; padding:10px; background:#eff6ff; border:1px solid #bfdbfe; border-radius:8px; width:100px;">
+                            <div style="font-size:2em;">💸</div>
+                            <div style="font-size:0.8em; font-weight:bold; color:#1e40af; margin-top:5px;">İlk Harcama</div>
+                        </div>
+                    `;
+                }
+
+                if (badges.includes('SAVINGS_MASTER')) {
+                    list.innerHTML += `
+                        <div style="text-align:center; padding:10px; background:#fff7ed; border:1px solid #fed7aa; border-radius:8px; width:100px;">
+                            <div style="font-size:2em;">💰</div>
+                            <div style="font-size:0.8em; font-weight:bold; color:#c2410c; margin-top:5px;">Tasarruf Ustası</div>
+                        </div>
+                    `;
+                }
+
+                if (badges.includes('NIGHT_OWL')) {
+                    list.innerHTML += `
+                        <div style="text-align:center; padding:10px; background:#f5f3ff; border:1px solid #c4b5fd; border-radius:8px; width:100px;">
+                            <div style="font-size:2em;">🦉</div>
+                            <div style="font-size:0.8em; font-weight:bold; color:#5b21b6; margin-top:5px;">Gece Kuşu</div>
+                        </div>
+                    `;
+                }
+            }
+
+            const ALL_BADGES_DEF = [
+                { code: 'FIRST_EXPENSE', icon: '💸', title: 'İlk Harcama', desc: 'İlk harcamanı yaparak bu rozeti aç.', type: 'expense' },
+                { code: 'GOAL_MASTER', icon: '🎯', title: 'Hedef Avcısı', desc: 'Bir kumbara hedefini tamamla.', type: 'goal' },
+                { code: 'SAVINGS_MASTER', icon: '💰', title: 'Tasarruf Ustası', desc: 'Gelirlerin giderlerinden fazla olsun.', type: 'savings' },
+                { code: 'NIGHT_OWL', icon: '🦉', title: 'Gece Kuşu', desc: 'Gece 00:00 - 05:00 arası işlem yap.', type: 'night' }
+            ];
+
+            function updateDashboardBadges(badges) {
+                const container = document.getElementById('right-sidebar-badges');
+                if (!container) return;
+                
+                container.innerHTML = '';
+                const earnedList = badges || [];
+                
+                ALL_BADGES_DEF.forEach(badge => {
+                    const isEarned = earnedList.includes(badge.code);
+                    const statusClass = isEarned ? `unlocked ${badge.type || ''}` : 'locked';
+                    const statusIcon = isEarned ? '✅' : '🔒';
+                    
+                    container.innerHTML += `
+                        <div class="badge-item ${statusClass}">
+                            <div class="badge-icon">${badge.icon}</div>
+                            <div class="badge-info">
+                                <h4>${badge.title}</h4>
+                                <p>${badge.desc}</p>
+                            </div>
+                            <div style="font-size:0.8em;">${statusIcon}</div>
+                        </div>
+                    `;
+                });
+            }
+
+            // Fetch API Dinleyicisi (Modern tarayıcılar için)
+            const originalFetch = window.fetch;
+            window.fetch = async function(...args) {
+                const response = await originalFetch(...args);
+                try {
+                    const url = args[0] ? args[0].toString() : '';
+                    if (url.includes('/api/kumbara') && response.ok) {
+                        const clone = response.clone();
+                        const data = await clone.json(); // Veriyi bekle
+                        
+                        if (data.badges) {
+                            updateBadges(data.badges);
+                        }
+
+                        if (data.is_completed) {
+                            fireConfetti();
+                            showSuccessUI();
+                        } else {
+                            // Eğer hedef tamamlanmadıysa ve UI hala "Başarılı" modundaysa (Bar yoksa), eski haline getir
+                            const container = document.getElementById('piggy-goal-container');
+                            if (container && !document.getElementById('piggy-goal-bar')) {
+                                restoreGoalUI();
+                            }
+                        }
+                    } else if (url.includes('/api/ozet') && response.ok) {
+                        const clone = response.clone();
+                        const data = await clone.json();
+                        if (data.badges) {
+                            updateDashboardBadges(data.badges);
+                        }
+                    }
+                } catch (e) {}
+                return response;
+            };
+        })();
+    </script>
 </body>
 </html>

@@ -1,6 +1,5 @@
 import os
 import logging
-import socket
 import uvicorn
 from fastapi import FastAPI, Request, APIRouter, Response
 from contextlib import asynccontextmanager
@@ -71,9 +70,5 @@ os.makedirs(static_dir, exist_ok=True)
 app.mount("/", StaticFiles(directory=static_dir, html=True), name="static")
 
 if __name__ == "__main__":
-    try:
-        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        s.connect(("8.8.8.8", 80))
-        print(f"\n🚀 http://{s.getsockname()[0]}:8000\n")
-    except Exception: pass
+    logger.info("🚀 Uygulama çalışıyor. Codespaces 'Ports' sekmesinden adresi açabilirsiniz.")
     uvicorn.run(app, host="0.0.0.0", port=8000)
